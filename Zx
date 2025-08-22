@@ -1,0 +1,301 @@
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Galaxy Downloader</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* Background animasi */
+    canvas#bgCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 480px;
+      padding: 25px;
+      background: rgba(20,20,40,0.85);
+      border-radius: 18px;
+      box-shadow: 0 0 25px rgba(0,255,255,0.3);
+      text-align: center;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.6s ease;
+      display: none;
+    }
+    .container.active {
+      opacity: 1;
+      transform: translateY(0);
+      display: block;
+    }
+
+    h2 { margin-bottom: 18px; color: #00fff7; text-shadow: 0 0 8px #00fff7; }
+    h3 { margin: 12px 0; }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      outline: none;
+      text-align: center;
+    }
+
+    .button {
+      margin-top: 12px;
+      padding: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      background: linear-gradient(90deg,#00fff7,#00aaff);
+      color: #121212;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 0 12px #00fff7;
+    }
+    .button:hover {
+      background: linear-gradient(90deg,#00c0ff,#0090ff);
+      box-shadow: 0 0 20px #00fff7;
+    }
+    .button:disabled {
+      background: #555;
+      color: #aaa;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    .opt-btn {
+      flex: 1;
+      min-width: 90px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #2c2c2c;
+      cursor: pointer;
+      transition: 0.3s;
+      text-align: center;
+      box-shadow: 0 0 8px rgba(255,255,255,0.2);
+    }
+    .opt-btn.active {
+      background: #00fff7;
+      color: #000;
+      font-weight: bold;
+      box-shadow: 0 0 15px #00fff7;
+    }
+
+    .message {
+      margin-top: 12px;
+      color: #ff6b6b;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    /* Spinner */
+    .spinner {
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top: 4px solid #00fff7;
+      border-radius: 50%;
+      width: 45px; height: 45px;
+      margin: 15px auto;
+      animation: spin 1s linear infinite;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+  </style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<!-- Menu Awal -->
+<div id="menu-awal" class="container active">
+  <h2>🚀 ZNXON Downloader</h2>
+  <input id="main-link" placeholder="Masukkan link TikTok atau YouTube..."/>
+  <button id="go-download" class="button">Masuk ke Menu Download</button>
+  <p id="msg-main" class="message"></p>
+</div>
+
+<!-- Menu Download -->
+<div id="menu-download" class="container">
+  <h2>Menu Download</h2>
+
+  <input id="download-link" placeholder="Paste link di sini (TikTok/YouTube)"/>
+  
+  <div>
+    <h3>Pilih Format</h3>
+    <div class="options" id="format-options">
+      <div class="opt-btn">MP4</div>
+      <div class="opt-btn">MP3</div>
+    </div>
+  </div>
+
+  <div>
+    <h3>Pilih Kualitas</h3>
+    <div class="options" id="quality-options">
+      <div class="opt-btn">720p</div>
+      <div class="opt-btn">1080p</div>
+      <div class="opt-btn">2K</div>
+      <div class="opt-btn">4K</div>
+      <div class="opt-btn">7K</div>
+    </div>
+  </div>
+
+  <div class="spinner" id="spinner"></div>
+  <button id="download-btn" class="button">Download</button>
+  <p id="msg-download" class="message"></p>
+</div>
+
+<script>
+  const menuAwal = document.getElementById("menu-awal");
+  const menuDownload = document.getElementById("menu-download");
+  const msgMain = document.getElementById("msg-main");
+  const msgDownload = document.getElementById("msg-download");
+  const spinner = document.getElementById("spinner");
+
+  // Masuk menu download
+  document.getElementById("go-download").onclick = () => {
+    const link = document.getElementById("main-link").value.trim();
+    if(!link){
+      msgMain.textContent = "Masukkan dulu link TikTok atau YouTube!";
+    } else {
+      msgMain.textContent = "";
+      openDownloadMenu(link);
+    }
+  };
+
+  function openDownloadMenu(link) {
+    menuAwal.classList.remove("active");
+    setTimeout(()=>{
+      menuAwal.style.display="none";
+      menuDownload.style.display="block";
+      setTimeout(()=>menuDownload.classList.add("active"),50);
+    },400);
+    document.getElementById("download-link").value = link;
+    msgDownload.textContent = "";
+    clearSelections();
+  }
+
+  // pilihan format
+  document.querySelectorAll("#format-options .opt-btn").forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll("#format-options .opt-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+    }
+  });
+  // pilihan kualitas
+  document.querySelectorAll("#quality-options .opt-btn").forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll("#quality-options .opt-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+    }
+  });
+
+  // tombol download
+  document.getElementById("download-btn").onclick=()=>{
+    const link=document.getElementById("download-link").value.trim();
+    const format=document.querySelector("#format-options .active");
+    const quality=document.querySelector("#quality-options .active");
+
+    if(!link){
+      msgDownload.textContent="Masukkan link dulu!";
+    } else if(!format || !quality){
+      msgDownload.textContent="Silahkan pilih format dan kualitas!";
+    } else {
+      msgDownload.textContent="";
+      spinner.style.display="block";
+      setTimeout(()=>{
+        spinner.style.display="none";
+        msgDownload.style.color="#00fff7";
+        msgDownload.textContent="✅ Berhasil mendownload!";
+        setTimeout(()=>{
+          msgDownload.style.color="#ff6b6b";
+          msgDownload.textContent="";
+          menuDownload.classList.remove("active");
+          setTimeout(()=>{
+            menuDownload.style.display="none";
+            menuAwal.style.display="block";
+            setTimeout(()=>menuAwal.classList.add("active"),50);
+            document.getElementById("main-link").value="";
+          },400);
+        },1500);
+      },2000);
+    }
+  };
+
+  function clearSelections(){
+    document.querySelectorAll(".opt-btn").forEach(b=>b.classList.remove("active"));
+  }
+
+  // Background animasi
+  const canvas=document.getElementById("bgCanvas");
+  const ctx=canvas.getContext("2d");
+  let w,h;
+  function resize(){ w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; }
+  window.addEventListener("resize",resize); resize();
+
+  let stars=[],fireflies=[],asteroids=[];
+  for(let i=0;i<100;i++) stars.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*2});
+  for(let i=0;i<20;i++) fireflies.push({x:Math.random()*w,y:Math.random()*h,r:2,dx:(Math.random()-0.5),dy:(Math.random()-0.5)});
+  for(let i=0;i<5;i++) asteroids.push({x:Math.random()*w,y:Math.random()*h,dx:1+Math.random()*2,dy:1+Math.random()*2,r:6+Math.random()*6});
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    // stars
+    ctx.fillStyle="white";
+    stars.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,2*Math.PI); ctx.fill(); });
+    // shooting star
+    if(Math.random()<0.005){
+      let sx=Math.random()*w, sy=Math.random()*h/2;
+      stars.push({x:sx,y:sy,r:2,dx:4,dy:4,life:60});
+    }
+    stars.forEach((s,i)=>{
+      if(s.dx){ s.x+=s.dx; s.y+=s.dy; s.life--; if(s.life<=0) stars.splice(i,1); }
+    });
+    // fireflies
+    ctx.fillStyle="yellow";
+    fireflies.forEach(f=>{
+      f.x+=f.dx; f.y+=f.dy;
+      if(f.x<0||f.x>w) f.dx*=-1;
+      if(f.y<0||f.y>h) f.dy*=-1;
+      ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,2*Math.PI); ctx.fill();
+    });
+    // asteroids
+    ctx.fillStyle="gray";
+    asteroids.forEach(a=>{
+      a.x+=a.dx; a.y+=a.dy;
+      if(a.x>w||a.y>h){ a.x=0; a.y=Math.random()*h/2; }
+      ctx.beginPath(); ctx.arc(a.x,a.y,a.r,0,2*Math.PI); ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+</script>
+</body>
+</html>
